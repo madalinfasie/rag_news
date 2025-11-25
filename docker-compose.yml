@@ -1,0 +1,50 @@
+services:
+  backend:
+    build: ./app
+    container_name: backend
+    env_file:
+      - ./app/.env
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/code
+
+  feeder:
+    build: ./feeder
+    container_name: feeder
+    env_file:
+      - ./feeder/.env
+    volumes:
+      - ./feeder:/code
+    depends_on:
+      - qdrant
+
+  qdrant:
+    image: qdrant/qdrant:v1.15.1
+    container_name: qdrant
+    ports:
+      - 6333:6333
+      - 6334:6334
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  ollama:
+    image: ollama/ollama:0.13.0
+    container_name: ollama
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [ "gpu" ]
+              count: all
+
+volumes:
+  qdrant_data:
+  ollama_data:
+

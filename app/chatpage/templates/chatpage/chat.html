@@ -1,0 +1,30 @@
+{% extends "chatpage/header.html" %}
+
+{% block content %}
+<h1>How can I help you?</h1>
+
+<div class="row">
+    <div class="card">
+        <div class="body">
+            {% for chat in chat_history %}
+            <p>{% if chat.role == "user" %}
+                <span class="text-success-emphasis fw-bold">You:</span> {{ chat.text }}
+                {% else %}
+                <span class="text-danger-emphasis fw-bold">Assistant:</span> {{ chat.text }}
+                {% endif %}
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <form action="{% url 'query' %}" method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+        <button class="btn btn-primary" type="submit">Send</button>
+    </form>
+</div>
+
+{% endblock content %}
