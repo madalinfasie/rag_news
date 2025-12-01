@@ -134,3 +134,5 @@ EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL")
 MAX_CHAT_HISTORY = 5
 
 EMBEDDINGS = OllamaEmbeddings(model=EMBEDDINGS_MODEL, base_url=OLLAMA_URL)
+
+WEATHER_MCP_SERVER = os.getenv("WEATHER_MCP_SERVER", "http://mcp_server:8080/mcp")

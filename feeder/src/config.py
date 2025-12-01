@@ -11,4 +11,7 @@ class Config:
     OLLAMA_URL = os.getenv("OLLAMA_URL")
     EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL")
 
-    EMBEDDINGS = OllamaEmbeddings(model=EMBEDDINGS_MODEL, base_url=OLLAMA_URL)
+    if EMBEDDINGS_MODEL:
+        EMBEDDINGS = OllamaEmbeddings(model=EMBEDDINGS_MODEL, base_url=OLLAMA_URL)
+    else:
+        raise ValueError("No EMBEDDINGS_MODEL was set")
