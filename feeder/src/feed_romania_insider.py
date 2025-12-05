@@ -76,7 +76,7 @@ def load() -> list[Document]:
 
 
 def split(articles: list[Document]) -> list[Document]:
-    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=200)
     return splitter.split_documents(articles)
 
 
