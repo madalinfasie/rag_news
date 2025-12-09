@@ -1,9 +1,7 @@
 from chatpage.forms import ChatForm
 from chatpage.services import llm
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views import View
-
-chat_history = []
 
 
 class ChatView(View):
@@ -12,7 +10,10 @@ class ChatView(View):
         return render(
             request,
             "chatpage/chat.html",
-            context={"form": form, "chat_history": chat_history},
+            context={
+                "form": form,
+                "chat_history": request.session.get("chat_history", []),
+            },
         )
 
     def post(self, request):
@@ -20,17 +21,16 @@ class ChatView(View):
         if form.is_valid():
             query = form.cleaned_data["query"]
             answer = llm.ask(query)
-            chat_history.append({"role": "user", "text": query})
-            chat_history.append({"role": "assistant", "text": answer})
 
-            return render(
-                request,
-                "chatpage/chat.html",
-                {"form": form, "chat_history": chat_history},
-            )
+            history = request.session.get("chat_history", [])
+            history.append({"role": "user", "text": query})
+            history.append({"role": "assistant", "text": answer})
+
+            request.session["chat_history"] = history
+            return redirect("query")
 
         return render(
             request,
             "chatpage/chat.html",
-            {"form": form, "chat_history": chat_history},
+            {"form": form, "chat_history": request.session.get("chat_history", [])},
         )
