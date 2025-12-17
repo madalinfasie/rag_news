@@ -5,7 +5,7 @@ WORKDIR ${CODE}
 
 COPY . ${CODE}
 
-RUN pip install uv && uv sync && uv run manage.py migrate
+RUN pip install uv && uv sync
 
 EXPOSE 8000
 

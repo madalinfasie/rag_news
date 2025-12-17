@@ -131,8 +131,10 @@ QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "news_articles")
 MODEL_NAME = os.getenv("MODEL_NAME")
 OLLAMA_URL = os.getenv("OLLAMA_URL")
 EMBEDDINGS_MODEL = os.getenv("EMBEDDINGS_MODEL")
+RERANKER_MODEL = os.getenv("RERANKER_MODEL")
 MAX_CHAT_HISTORY = 5
 
-EMBEDDINGS = OllamaEmbeddings(model=EMBEDDINGS_MODEL, base_url=OLLAMA_URL)
+if EMBEDDINGS_MODEL:
+    EMBEDDINGS = OllamaEmbeddings(model=EMBEDDINGS_MODEL, base_url=OLLAMA_URL)
 
 WEATHER_MCP_SERVER = os.getenv("WEATHER_MCP_SERVER", "http://mcp_server:8080/mcp")

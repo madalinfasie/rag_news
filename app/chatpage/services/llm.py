@@ -1,4 +1,5 @@
 import asyncio
+import time
 import typing as t
 
 from chatpage.services import qdrant
@@ -9,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
 from langgraph.graph import START, StateGraph
+from sentence_transformers.cross_encoder import CrossEncoder
 
 mcp_client = MultiServerMCPClient(
     {
@@ -19,10 +21,12 @@ mcp_client = MultiServerMCPClient(
     }
 )
 
+llm = ChatOllama(model=settings.MODEL_NAME, base_url=settings.OLLAMA_URL)
+reranker = CrossEncoder(settings.RERANKER_MODEL)
+
 
 async def get_llm_agent():
     tools = await mcp_client.get_tools()
-    llm = ChatOllama(model=settings.MODEL_NAME, base_url=settings.OLLAMA_URL)
     return create_agent(model=llm, tools=tools)
 
 
@@ -48,13 +52,30 @@ class State(t.TypedDict):
     answer: str
 
 
-def _retrieve(state: State) -> State:
-    retrieved_docs = qdrant.vector_store.similarity_search(state["question"], k=5)
+async def _retrieve(state: State) -> State:
+    start = time.perf_counter()
+    retrieved_docs = qdrant.vector_store.similarity_search(state["question"], k=100)
     state["context"] = retrieved_docs
+    print(f"Retrieved in {time.perf_counter() - start}")
+    return state
+
+
+async def _rerank(state: State) -> State:
+    start = time.perf_counter()
+    query = state["question"]
+    documents = state["context"]
+
+    text_docs = [doc.page_content for doc in documents]
+    ranks = reranker.rank(query, text_docs)
+
+    filtered_documents = [documents[rank["corpus_id"]] for rank in ranks[:5]]
+    state["context"] = filtered_documents
+    print(f"Reranking in {time.perf_counter() - start}")
     return state
 
 
 async def _generate(state: State) -> State:
+    start = time.perf_counter()
     agent = await get_llm_agent()
     docs_content = "\n\n".join([doc.page_content for doc in state["context"]])
     prompt_with_context = system_prompt.format(context=docs_content)
@@ -62,11 +83,12 @@ async def _generate(state: State) -> State:
     res = await agent.ainvoke({"messages": messages})
 
     state["answer"] = res["messages"][-1].content
+    print(f"Generated answer in {time.perf_counter() - start}")
     return state
 
 
 def _build_graph():
-    graph_builder = StateGraph(State).add_sequence([_retrieve, _generate])
+    graph_builder = StateGraph(State).add_sequence([_retrieve, _rerank, _generate])
     graph_builder.add_edge(START, "_retrieve")
     return graph_builder.compile()
 
